@@ -19,14 +19,14 @@ cd $pkg-$CC_VER
 mkdir build
 cd build
 
-../configure --prefix=/usr --disable-shared --disable-threads --enable-languages=c,c++ --disable-multilib --target=x86_64-w64-mingw32 --with-build-sysroot=/usr/x86_64-w64-mingw32 --disable-libstdcxx --disable-libatomic
+../configure --prefix=/usr --disable-shared --disable-threads --enable-languages=c,c++ --disable-multilib --target=$TARGET_CROSS --with-build-sysroot=/usr/$TARGET_CROSS --disable-libstdcxx --disable-libatomic
 
 
 make -j$(nproc)
 make DESTDIR=$LOCATION install
 make DESTDIR=/pkgs/$TARGET_CROSS-$pkg install
 find /pkgs/$TARGET_CROSS-$pkg/usr/bin -type f -and \( -executable \) -exec strip '{}' \;
-strip /pkgs/$TARGET_CROSS-$pkg/usr/libexec/gcc/$TARGET_CROSS/12.2.0/{cc1*,collect2,lto*}
+strip /pkgs/$TARGET_CROSS-$pkg/usr/libexec/gcc/$TARGET_CROSS/$CC_VER/{cc1*,collect2,lto*}
 rm -r /pkgs/$TARGET_CROSS-$pkg/usr/share
 # Delete the old files
 cd $BUILD_DIR

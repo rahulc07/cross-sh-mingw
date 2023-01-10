@@ -22,7 +22,7 @@ make install
 
 cd ..
 
-./configure --enable-experimental --prefix=/usr/x86_64-w64-mingw32 --host=x86_64-w64-mingw32
+./configure --enable-experimental --prefix=/usr/$TARGET_CROSS --host=$TARGET_CROSS
 # For some reason mingw doesn't support multiple jobs
 make
 
