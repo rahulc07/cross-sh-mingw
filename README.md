@@ -1,3 +1,6 @@
+# About this version
+This version is specifically for Tucana with mingw for the x86_64-w64-mingw32 and i686-w64-mingw32 toolchains
+
 # cross-sh
 A Universal set of scripts to build cross compilers
 
