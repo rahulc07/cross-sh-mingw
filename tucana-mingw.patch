@@ -1,0 +1,293 @@
+diff -Naur cross-sh/build_toolchain.sh cross-sh-mingw/build_toolchain.sh
+--- cross-sh/build_toolchain.sh	2022-09-18 13:10:26.372984836 -0400
++++ cross-sh-mingw/build_toolchain.sh	2022-09-18 13:09:53.849862115 -0400
+@@ -14,36 +14,14 @@
+ echo "Building Binutils..."
+ bash toolchain_binutils.sh &> /dev/null
+ error_check "$?"
++echo "Building mingw headers"
++bash toolchain_mingw_headers.sh &> /dev/null
+ echo "Building GCC Stage 1..."
+ bash toolchain_gcc_static.sh &> /dev/null
+ error_check "$?"
+-echo "Copying the Linux API Headers..."
+-bash toolchain_linux_headers.sh &> /dev/null
+-error_check "$?"
+-if [[ $LIBC == GLIBC ]]
+-then
+-   echo "Building GLIBC"
+-   bash toolchain_glibc.sh &> /dev/null
+-   error_check "$?"
+-elif [[ $LIBC == MUSL ]]
+-then
+-   echo "Building Musl"
+-   bash toolchain_musl.sh &> /dev/null
+-   error_check "$?"
+-elif [[ $LIBC == PICOLIBC ]]
+-then
+-   bash toolchain_picolibc &> /dev/null
+-   error_check "$?"
+-elif [[ $LIBC == NEWLIB ]]
+-then
+-    bash toolchain_newlib.sh &> /dev/null
+-    error_check "$?"
+-else 
+-	echo "LIBC Variable is invalid check your toolchain.conf"
+-fi
+-
+-
++echo "Building mingw"
++bash toolchain_mingw.sh &> /dev/null
+ echo "Building the final stage of GCC..."
+ bash toolchain_gcc_final.sh &> /dev/null
+ error_check "$?"
+-echo "All Done, remember to add $LOCATION/usr/bin to your path"
++echo "Run package.sh"
+diff -Naur cross-sh/package.sh cross-sh-mingw/package.sh
+--- cross-sh/package.sh	2022-09-18 13:10:38.141029241 -0400
++++ cross-sh-mingw/package.sh	2022-09-18 13:09:53.849862115 -0400
+@@ -5,7 +5,6 @@
+ echo "$TARGET_CROSS-binutils $TARGET_CROSS-gcc $TARGET_CROSS-glibc $TARGET_CROSS-linux-api-headers" > /pkgs/$TARGET_CROSS/var/cache/mercury/meta-pkgs/$TARGET_CROSS
+ cd /pkgs
+ tar -cvzpf $TARGET_CROSS-gcc.tar.xz $TARGET_CROSS-gcc
+-tar -cvzpf $TARGET_CROSS-glibc.tar.xz $TARGET_CROSS-glibc
+ tar -cvpzf $TARGET_CROSS-binutils.tar.xz $TARGET_CROSS-binutils
+-tar -cvzpf $TARGET_CROSS-linux-api-headers.tar.xz $TARGET_CROSS-linux-api-headers
++tar -cvpzf $TARGET_CROSS-mingw.tar.xz $TARGET_CROSS-mingw
+ mv $TARGET_CROSS*.tar.xz /finished
+diff -Naur cross-sh/toolchain.conf cross-sh-mingw/toolchain.conf
+--- cross-sh/toolchain.conf	2022-09-18 13:10:38.143029249 -0400
++++ cross-sh-mingw/toolchain.conf	2022-09-18 13:09:53.850862119 -0400
+@@ -7,24 +7,20 @@
+ SOURCES_DIR=/blfs/builds
+ START_DIR=$(pwd)
+ BUILD_DIR=/blfs/builds
+-TARGET_CROSS=aarch64-linux-gnu
++TARGET_CROSS=x86_64-w64-mingw32
+ LOCATION=/
+ HOST=x86_64-linux-gnu
+ PATH=$LOCATION/usr/bin:$PATH
+ JOBS=$(nproc)
+-# Select your libc here don't forget to set the version below
+-# Available options are GLIBC, NEWLIB, MUSL or PICOLIBC  if you want java compatiablity choose glibc otherwise it is reccommended to choose musl
+-LIBC=GLIBC
++
++# DO NOT CHANGE, THIS BUILD HAS BEEN PATCHED FOR MINGW ONLY!!!
++LIBC=MINGW
+ 
+ 
+-# For the kernel, check here for what to put https://github.com/torvalds/linux/tree/master/arch.  Leave it blank for host kernel
+-ARCH=arm64
+ 
+ # Package Versions
+ LD_VER=2.39
+ CC_VER=12.2.0
+-KERNEL_VER=5.19.2
+-GLIBC_VER=2.36
+ 
+ # Other options for libc, select which one you want above
+ # https://www.musl-libc.org/
+diff -Naur cross-sh/toolchain_gcc_final.sh cross-sh-mingw/toolchain_gcc_final.sh
+--- cross-sh/toolchain_gcc_final.sh	2022-09-18 13:10:38.143029249 -0400
++++ cross-sh-mingw/toolchain_gcc_final.sh	2022-09-18 13:39:19.304523806 -0400
+@@ -15,25 +15,19 @@
+ 
+ # Start the build
+ 
+-tar -xf $SOURCES_DIR/mpfr-4.1.0.tar.xz
+-mv -v mpfr-4.1.0 mpfr
+-tar -xf $SOURCES_DIR/gmp-6.2.1.tar.xz
+-mv -v gmp-6.2.1 gmp
+-tar -xf $SOURCES_DIR/mpc-1.2.1.tar.gz
+-mv -v mpc-1.2.1 mpc
+ 
+ mkdir build
+ cd build
+ 
+-CFLAGS_FOR_TARGET='-O2' CFLAGS='-O2' ../configure --prefix=/usr --enable-languages=c,c++ --disable-multilib --target=$TARGET_CROSS --disable-werror --with-sysroot=/usr/$TARGET_CROSS --with-build-sysroot=/usr/$TARGET_CROSS --with-local-prefix=/usr/$TARGET_CROSS --with-system-zlib 
+-make CFLAGS_FOR_TARGET='-O2' CFLAGS='-O2' BOOT_CFLAGS='-O2' -j$(nproc)
++../configure --prefix=/usr --disable-shared --disable-threads --enable-languages=c,c++ --disable-multilib --target=x86_64-w64-mingw32 --with-build-sysroot=/usr/x86_64-w64-mingw32 --disable-libstdcxx --disable-libatomic
++
++
++make -j$(nproc)
+ make DESTDIR=$LOCATION install
+ make DESTDIR=/pkgs/$TARGET_CROSS-$pkg install
+-# Thanks arch btw 
+-  find /pkgs/$TARGET_CROSS-$pkg/usr/bin/ /pkgs/$TARGET_CROSS-$pkg/usr/libexec/gcc/$TARGET_CROSS/ -type f -and \( -executable \) -exec strip '{}' \;
+-# Strip the target libs
+-find /pkgs/$TARGET_CROSS-$pkg/usr/$TARGET_CROSS/lib* -type f -executable -name '*.so*' -exec $TARGET_CROSS-strip {} \;
+-
++find /pkgs/$TARGET_CROSS-$pkg/usr/bin -type f -and \( -executable \) -exec strip '{}' \;
++strip /pkgs/$TARGET_CROSS-$pkg/usr/libexec/gcc/$TARGET_CROSS/12.2.0/{cc1*,collect2,lto*}
++rm -r /pkgs/$TARGET_CROSS-$pkg/usr/share
+ # Delete the old files
+ cd $BUILD_DIR
+ rm -rf $pkg-$CC_VER
+diff -Naur cross-sh/toolchain_gcc_static.sh cross-sh-mingw/toolchain_gcc_static.sh
+--- cross-sh/toolchain_gcc_static.sh	2022-09-18 13:10:38.143029249 -0400
++++ cross-sh-mingw/toolchain_gcc_static.sh	2022-09-18 13:09:53.850862119 -0400
+@@ -12,21 +12,15 @@
+ 
+ # Start the build
+ 
+-tar -xf $SOURCES_DIR/mpfr-4.1.0.tar.xz
+-mv -v mpfr-4.1.0 mpfr
+-tar -xf $SOURCES_DIR/gmp-6.2.1.tar.xz
+-mv -v gmp-6.2.1 gmp
+-tar -xf $SOURCES_DIR/mpc-1.2.1.tar.gz
+-mv -v mpc-1.2.1 mpc
+ 
+ mkdir build
+ cd build
+ 
+-../configure --prefix=/usr --disable-threads --disable-shared --with-newlib --without-headers --enable-languages=c,c++ --disable-multilib --target=$TARGET_CROSS
++../configure --prefix=/usr --disable-threads --disable-shared --enable-languages=c,c++ --disable-multilib --target=$TARGET_CROSS
+ 
+-make all-gcc all-target-libgcc -j$JOBS
++make all-gcc -j$JOBS
+ 
+-PATH=$LOCATION/usr/bin:$PATH make DESTDIR=$LOCATION install-gcc install-target-libgcc
++make install-gcc
+ 
+ # Delete the old files
+ cd $BUILD_DIR
+diff -Naur cross-sh/toolchain_glibc.sh cross-sh-mingw/toolchain_glibc.sh
+--- cross-sh/toolchain_glibc.sh	2022-09-18 13:10:38.143029249 -0400
++++ cross-sh-mingw/toolchain_glibc.sh	1969-12-31 19:00:00.000000000 -0500
+@@ -1,26 +0,0 @@
+-#!/bin/bash
+-set -e
+-# Source the configuration
+-source toolchain.conf
+-
+-pkg=glibc
+-# Untar
+-
+-cd $BUILD_DIR
+-tar -xvf $SOURCES_DIR/$pkg-$GLIBC_VER.tar.xz
+-cd $pkg-$GLIBC_VER
+-
+-# Start the build
+-
+-mkdir build
+-cd build
+-
+-../configure --prefix=/usr --host=$TARGET_CROSS --with-headers=$LOCATION/usr/$TARGET_CROSS/usr/include libc_cv_slibdir=/usr/lib
+-
+-make -j$JOBS
+-
+-make install_root=/usr/$TARGET_CROSS install
+-make install_root=/pkgs/$TARGET_CROSS-$pkg/usr/$TARGET_CROSS install
+-# Delete the old files
+-cd $BUILD_DIR
+-rm -rf $pkg-$GLIBC_VER
+diff -Naur cross-sh/toolchain_linux_headers.sh cross-sh-mingw/toolchain_linux_headers.sh
+--- cross-sh/toolchain_linux_headers.sh	2022-09-18 13:10:38.143029249 -0400
++++ cross-sh-mingw/toolchain_linux_headers.sh	1969-12-31 19:00:00.000000000 -0500
+@@ -1,28 +0,0 @@
+-#!/bin/bash
+-
+-# These are usually called linux-api-headers on different distros, just in case you have some trouble with these
+-
+-# Exit on error (not really needed for this package)
+-set -e
+-# Source the configuration
+-source toolchain.conf
+-
+-# This is what the tar is called
+-pkg=linux
+-# Untar
+-
+-cd $BUILD_DIR
+-tar -xvf $SOURCES_DIR/$pkg-$KERNEL_VER.tar.xz
+-cd $pkg-$KERNEL_VER
+-
+-# Start the build
+-
+-make ARCH=$ARCH headers
+-mkdir -p $LOCATION/usr/$TARGET_CROSS/usr/include
+-cp -rpv usr/include/* $LOCATION/usr/$TARGET_CROSS/usr/include
+-
+-mkdir -p /pkgs/$TARGET_CROSS-linux-api-headers/usr/$TARGET_CROSS/usr/include
+-cp -rpv usr/include/* /pkgs/$TARGET_CROSS-linux-api-headers/usr/$TARGET_CROSS/usr/include
+-# Delete the old files
+-cd $BUILD_DIR
+-rm -rf $pkg-$KERNEL_VER
+diff -Naur cross-sh/toolchain_mingw_headers.sh cross-sh-mingw/toolchain_mingw_headers.sh
+--- cross-sh/toolchain_mingw_headers.sh	1969-12-31 19:00:00.000000000 -0500
++++ cross-sh-mingw/toolchain_mingw_headers.sh	2022-09-18 13:09:53.851862122 -0400
+@@ -0,0 +1,24 @@
++#!/bin/bash
++set -e
++# Source the configuration
++source toolchain.conf
++# For Build System Only
++pkg=mingw
++# Untar
++
++cd $BUILD_DIR
++tar -xvf $SOURCES_DIR/mingw-w64-v10.0.0.tar.bz2
++cd mingw-w64-v10.0.0
++
++# Start the build
++
++cd mingw-w64-headers
++
++./configure --prefix=/usr/$TARGET_CROSS 
++
++make -j$JOBS
++
++make install
++# Delete the old files
++cd $BUILD_DIR
++rm -rf mingw-w64-v10.0.0
+diff -Naur cross-sh/toolchain_mingw.sh cross-sh-mingw/toolchain_mingw.sh
+--- cross-sh/toolchain_mingw.sh	1969-12-31 19:00:00.000000000 -0500
++++ cross-sh-mingw/toolchain_mingw.sh	2022-09-18 13:09:53.851862122 -0400
+@@ -0,0 +1,34 @@
++#!/bin/bash
++set -e
++# Source the configuration
++source toolchain.conf
++# For Build System Only
++pkg=mingw
++# Untar
++
++cd $BUILD_DIR
++tar -xvf $SOURCES_DIR/mingw-w64-v10.0.0.tar.bz2
++cd mingw-w64-v10.0.0
++
++# Start the build
++
++cd mingw-w64-headers
++
++./configure --prefix=/usr/$TARGET_CROSS 
++
++make
++make DESTDIR=/pkgs/$TARGET_CROSS-mingw install
++make install
++
++cd ..
++
++./configure --enable-experimental --prefix=/usr/x86_64-w64-mingw32 --host=x86_64-w64-mingw32
++# For some reason mingw doesn't support multiple jobs
++make
++
++make DESTDIR=/pkgs/$TARGET_CROSS-mingw install
++make install
++
++# Delete the old files
++cd $BUILD_DIR
++rm -rf mingw-w64-v10.0.0
+diff -Naur cross-sh/wget cross-sh-mingw/wget
+--- cross-sh/wget	2022-09-18 13:10:38.144029253 -0400
++++ cross-sh-mingw/wget	2022-09-18 13:09:53.851862122 -0400
+@@ -1,7 +1,3 @@
+ https://ftp.gnu.org/gnu/gcc/gcc-12.2.0/gcc-12.2.0.tar.xz
+-https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.19.2.tar.xz
+ https://ftp.gnu.org/gnu/binutils/binutils-2.39.tar.xz
+-https://ftp.gnu.org/gnu/glibc/glibc-2.36.tar.xz
+-https://ftp.gnu.org/gnu/gmp/gmp-6.2.1.tar.xz
+-https://ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz
+-https://ftp.gnu.org/gnu/mpfr/mpfr-4.1.0.tar.xz
++https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/mingw-w64-v10.0.0.tar.bz2
