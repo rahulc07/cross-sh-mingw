@@ -7,8 +7,8 @@ pkg=mingw
 # Untar
 
 cd $BUILD_DIR
-tar -xvf $SOURCES_DIR/mingw-w64-v10.0.0.tar.bz2
-cd mingw-w64-v10.0.0
+tar -xvf $SOURCES_DIR/mingw-w64-v11.0.0.tar.bz2
+cd mingw-w64-v11.0.0
 
 # Start the build
 
@@ -21,4 +21,4 @@ make -j$JOBS
 make install
 # Delete the old files
 cd $BUILD_DIR
-rm -rf mingw-w64-v10.0.0
+rm -rf mingw-w64-v11.0.0
