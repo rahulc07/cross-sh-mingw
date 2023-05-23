@@ -7,8 +7,6 @@ if [[ ! -f toolchain.conf ]]; then
 	echo "FATAL: toolchain.conf file not found! Are you in the right directory?"	
         exit 1
 fi
-echo "EDIT THE TOOLCHAIN.CONF BEFORE RUNNING THIS SCRIPT!!!!"
-sleep 10
 
 source toolchain.conf
 echo "Using wget to get the files"
