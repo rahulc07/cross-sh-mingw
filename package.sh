@@ -3,6 +3,8 @@ source toolchain.conf
 mkdir -p /pkgs/$TARGET_CROSS/var/cache/neptune/meta-pkgs
 echo "$TARGET_CROSS-binutils $TARGET_CROSS-gcc $TARGET_CROSS-mingw" > /pkgs/$TARGET_CROSS/depends
 echo "$TARGET_CROSS-binutils $TARGET_CROSS-gcc $TARGET_CROSS-mingw " > /pkgs/$TARGET_CROSS/var/cache/neptune/meta-pkgs/$TARGET_CROSS
+#version with gcc
+echo "$CC_VER" > /pkgs/$TARGET_CROSS/version
 
 # Add depend files
 
@@ -20,4 +22,5 @@ cd /pkgs
 tar -cvzpf $TARGET_CROSS-gcc.tar.xz $TARGET_CROSS-gcc
 tar -cvpzf $TARGET_CROSS-binutils.tar.xz $TARGET_CROSS-binutils
 tar -cvpzf $TARGET_CROSS-mingw.tar.xz $TARGET_CROSS-mingw
+tar -cvpzf $TARGET_CROSS.tar.xz $TARGET_CROSS
 mv $TARGET_CROSS*.tar.xz /finished
