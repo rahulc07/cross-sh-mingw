@@ -8,7 +8,7 @@ pkg=gcc
 
 cd $BUILD_DIR
 wget https://ftp.gnu.org/gnu/$pkg/$pkg-$CC_VER/$pkg-$CC_VER.tar.xz
-tar -xvf $SOURCES_DIR/$pkg-$CC_VER.tar.xz
+tar -xvf $BUILD_DIR/$pkg-$CC_VER.tar.xz
 cd $pkg-$CC_VER
 
 # Start the build

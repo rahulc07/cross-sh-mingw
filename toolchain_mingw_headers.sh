@@ -7,7 +7,7 @@ pkg=mingw
 # Untar
 
 cd $BUILD_DIR
-tar -xvf $SOURCES_DIR/$pkg-w64-v$MINGW_VER.tar.bz2
+tar -xvf $BUILD_DIR/$pkg-w64-v$MINGW_VER.tar.bz2
 cd $pkg-w64-v$MINGW_VER
 
 # Start the build

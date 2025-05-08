@@ -9,5 +9,5 @@ if [[ ! -f toolchain.conf ]]; then
 fi
 
 source toolchain.conf
-mkdir -p $SOURCES_DIR
+mkdir -p $BUILD_DIR
 mkdir -p $BUILD_DIR

@@ -10,7 +10,7 @@ pkg=gcc
 # Untar
 
 cd $BUILD_DIR
-tar -xvf $SOURCES_DIR/$pkg-$CC_VER.tar.xz
+tar -xvf $BUILD_DIR/$pkg-$CC_VER.tar.xz
 cd $pkg-$CC_VER
 
 # Start the build

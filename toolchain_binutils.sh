@@ -8,7 +8,7 @@ pkg=binutils
 
 cd $BUILD_DIR
 wget https://ftp.gnu.org/gnu/$pkg/$pkg-$LD_VER.tar.xz
-tar -xvf $SOURCES_DIR/$pkg-$LD_VER.tar.xz
+tar -xvf $BUILD_DIR/$pkg-$LD_VER.tar.xz
 cd $pkg-$LD_VER
 
 # Start the build
