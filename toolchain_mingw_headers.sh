@@ -7,12 +7,12 @@ pkg=mingw
 # Untar
 
 cd $BUILD_DIR
-tar -xvf $SOURCES_DIR/mingw-w64-v11.0.0.tar.bz2
-cd mingw-w64-v11.0.0
+tar -xvf $SOURCES_DIR/$pkg-w64-v$MINGW_VER.tar.bz2
+cd $pkg-w64-v$MINGW_VER
 
 # Start the build
 
-cd mingw-w64-headers
+cd $pkg-w64-headers
 
 ./configure --prefix=/usr/$TARGET_CROSS 
 
@@ -21,4 +21,4 @@ make -j$JOBS
 make install
 # Delete the old files
 cd $BUILD_DIR
-rm -rf mingw-w64-v11.0.0
+rm -rf $pkg-w64-v$MINGW_VER

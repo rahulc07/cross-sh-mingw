@@ -9,7 +9,5 @@ if [[ ! -f toolchain.conf ]]; then
 fi
 
 source toolchain.conf
-echo "Using wget to get the files"
 mkdir -p $SOURCES_DIR
 mkdir -p $BUILD_DIR
-wget --input-file=wget --continue --directory-prefix=$SOURCES_DIR

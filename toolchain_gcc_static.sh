@@ -7,6 +7,7 @@ pkg=gcc
 # Untar
 
 cd $BUILD_DIR
+wget https://ftp.gnu.org/gnu/$pkg/$pkg-$CC_VER/$pkg-$CC_VER.tar.xz
 tar -xvf $SOURCES_DIR/$pkg-$CC_VER.tar.xz
 cd $pkg-$CC_VER
 
